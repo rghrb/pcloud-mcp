@@ -80,6 +80,18 @@ docker compose up --build -d
 # docker-compose.yml is in the repo
 ```
 
+### Dokploy
+
+Dokploy / Traefik talk to the **container** port, not the host. Host port 3000 can stay used by the Dokploy UI.
+
+When you add the domain `pcloud.gharibyan.cloud`:
+
+1. Set **Port** to `3847` (must match `PORT`).
+2. Leave HTTPS to your proxy / Cloudflare as you already do.
+3. Redeploy.
+
+A **502 Bad Gateway** on `/setup` almost always means that domain Port is still `3000` while the app is on `3847`.
+
 ### Render / Railway / Fly / any Node host
 
 | Variable | Required | Meaning |
