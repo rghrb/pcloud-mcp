@@ -47,11 +47,13 @@ Pick one:
 ### A. Paste an access token (fastest)
 
 1. Create an app at [pCloud My Apps](https://docs.pcloud.com/my_apps/).
-2. Open  
-   `https://my.pcloud.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&response_type=token`
-3. After you approve, the redirect URL fragment contains `access_token=...`.
-4. Put that token in `PCLOUD_ACCESS_TOKEN`, or paste it on `/setup`.
-5. Set `PCLOUD_API_HOST=eapi.pcloud.com` for EU accounts, `api.pcloud.com` for US. `/setup` can auto-detect.
+2. Add redirect URI `https://YOUR_HOST/setup/callback` and allow implicit grant.
+3. Open this URL (no space after `client_id=`, and `redirect_uri` is required for `response_type=token`):
+
+   `https://my.pcloud.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&response_type=token&redirect_uri=https://YOUR_HOST/setup/callback`
+
+4. pCloud sends you back to `/setup/callback`. This server reads the token from the URL and saves it.
+5. Set `PCLOUD_API_HOST=eapi.pcloud.com` for EU accounts, `api.pcloud.com` for US, if auto-detect is wrong.
 
 ### B. OAuth from the server
 

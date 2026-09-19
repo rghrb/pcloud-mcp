@@ -7,7 +7,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import type { AppConfig } from "./config.js";
 import { createOAuthProvider } from "./oauth.js";
-import { homePage, setupPage } from "./pages.js";
+import { homePage, implicitCallbackPage, setupPage } from "./pages.js";
 import {
   exchangePCloudCode,
   hostnameFromLocation,
@@ -234,8 +234,17 @@ export async function createHttpApp(config: AppConfig): Promise<express.Express>
 
   app.get("/setup/callback", async (req, res) => {
     const code = String(req.query.code || "");
-    if (!code || !config.pcloudClientId || !config.pcloudClientSecret) {
-      res.status(400).type("html").send(setupPage({ hasClient: true, error: "Missing OAuth code." }));
+    if (!code) {
+      res.type("html").send(implicitCallbackPage());
+      return;
+    }
+    if (!config.pcloudClientId || !config.pcloudClientSecret) {
+      res.status(400).type("html").send(
+        setupPage({
+          hasClient: false,
+          error: "Got an OAuth code, but PCLOUD_CLIENT_ID / PCLOUD_CLIENT_SECRET are not set on the server."
+        })
+      );
       return;
     }
     try {

@@ -175,6 +175,41 @@ export function setupPage(opts: {
   );
 }
 
+export function implicitCallbackPage(): string {
+  return shell(
+    "Saving pCloud token",
+    `
+    <h1>Connecting pCloud</h1>
+    <p id="status">Saving the access token from pCloud…</p>
+    <form id="save" method="post" action="/setup/token">
+      <input type="hidden" name="token" />
+      <input type="hidden" name="region" value="auto" />
+    </form>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        var token = params.get("access_token");
+        var hostname = params.get("hostname") || "";
+        var locationid = params.get("locationid") || "";
+        var status = document.getElementById("status");
+        if (!token) {
+          status.textContent = "No access token in the redirect. Start again from /setup.";
+          status.className = "err";
+          return;
+        }
+        var region = "auto";
+        if (hostname.indexOf("eapi.") === 0 || locationid === "2") region = "eu";
+        else if (hostname.indexOf("api.") === 0 || locationid === "1") region = "us";
+        var form = document.getElementById("save");
+        form.token.value = token;
+        form.region.value = region;
+        form.submit();
+      })();
+    </script>
+    `
+  );
+}
+
 export function consentPage(opts: {
   pendingId: string;
   clientName: string;
