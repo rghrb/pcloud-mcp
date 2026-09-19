@@ -11,6 +11,7 @@ const ERRORS: Record<number, string> = {
   2008: "Account is over quota.",
   2009: "File not found.",
   2010: "Invalid path.",
+  2094: "Invalid access_token. Use the EU host eapi.pcloud.com or the US host api.pcloud.com, and reconnect at /setup if a stale PCLOUD_ACCESS_TOKEN is set.",
   4000: "Too many login tries from this IP."
 };
 
@@ -110,29 +111,68 @@ export class PCloudClient {
   }
 }
 
-export async function probeHostname(
-  accessToken: string,
-  preferred?: string
-): Promise<{ hostname: string; userinfo: JsonMap }> {
-  const candidates = [
-    preferred,
-    "eapi.pcloud.com",
-    "api.pcloud.com"
-  ].filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
+export async function resolveWorkingClient(
+  candidates: Array<PCloudCreds | undefined>
+): Promise<{ client: PCloudClient; creds: PCloudCreds }> {
+  const seen = new Set<string>();
+  const tries: PCloudCreds[] = [];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const token = candidate.access_token?.trim();
+    if (!token) continue;
+    const hosts = [candidate.hostname, "eapi.pcloud.com", "api.pcloud.com"].filter(
+      (value, index, all): value is string => Boolean(value) && all.indexOf(value) === index
+    );
+    for (const hostname of hosts) {
+      const key = `${hostname}:${token}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      tries.push({ ...candidate, access_token: token, hostname });
+    }
+  }
+  if (!tries.length) {
+    throw new Error("pCloud is not connected. Open /setup on this server and add an access token.");
+  }
 
   let lastError: unknown;
-  for (const hostname of candidates) {
+  for (const creds of tries) {
     try {
-      const client = new PCloudClient(accessToken, hostname);
+      const client = new PCloudClient(creds.access_token, creds.hostname);
       const userinfo = await client.call("userinfo");
-      return { hostname, userinfo };
+      return {
+        client,
+        creds: {
+          access_token: creds.access_token,
+          hostname: creds.hostname,
+          uid: Number(userinfo.userid || creds.uid || 0) || undefined,
+          email: String(userinfo.email || creds.email || "") || undefined
+        }
+      };
     } catch (error) {
       lastError = error;
     }
   }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Could not reach pCloud API with this token");
+
+  if (lastError instanceof PCloudError && lastError.result === 2094) {
+    throw new PCloudError(
+      2094,
+      "pCloud rejected the access token on both eapi.pcloud.com and api.pcloud.com. Remove a stale PCLOUD_ACCESS_TOKEN from the host env and reconnect at /setup."
+    );
+  }
+  throw lastError instanceof Error ? lastError : new Error("Could not reach pCloud");
+}
+
+export async function probeHostname(
+  accessToken: string,
+  preferred?: string
+): Promise<{ hostname: string; userinfo: JsonMap }> {
+  const resolved = await resolveWorkingClient([
+    { access_token: accessToken, hostname: preferred || "" }
+  ]);
+  return {
+    hostname: resolved.creds.hostname,
+    userinfo: { email: resolved.creds.email, userid: resolved.creds.uid }
+  };
 }
 
 export function hostnameFromLocation(locationid?: string | number, hostname?: string): string {

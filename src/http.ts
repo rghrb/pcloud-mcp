@@ -12,7 +12,8 @@ import {
   exchangePCloudCode,
   hostnameFromLocation,
   PCloudClient,
-  probeHostname
+  probeHostname,
+  resolveWorkingClient
 } from "./pcloud.js";
 import { loadJson, pcloudCredsPath, saveJson, type PCloudCreds } from "./store.js";
 import { createPCloudMcpServer } from "./server.js";
@@ -51,29 +52,30 @@ export async function createHttpApp(config: AppConfig): Promise<express.Express>
   const mcpUrl = new URL("/mcp", `${config.publicUrl}/`);
   const oauth = createOAuthProvider(config.dataDir, config.connectorPassword);
 
-  let cached: { creds: PCloudCreds; client: PCloudClient } | undefined;
+  let cached: { fingerprint: string; creds: PCloudCreds; client: PCloudClient } | undefined;
 
-  const loadCreds = async (): Promise<PCloudCreds | undefined> => {
-    if (config.pcloudAccessToken) {
-      return {
-        access_token: config.pcloudAccessToken,
-        hostname: config.pcloudApiHost
-      };
-    }
-    return loadJson<PCloudCreds | undefined>(pcloudCredsPath(config.dataDir), undefined);
+  const loadCreds = async (): Promise<PCloudCreds[]> => {
+    const saved = await loadJson<PCloudCreds | undefined>(
+      pcloudCredsPath(config.dataDir),
+      undefined
+    );
+    const envToken = config.pcloudAccessToken?.trim();
+    const fromEnv: PCloudCreds | undefined = envToken
+      ? { access_token: envToken, hostname: config.pcloudApiHost }
+      : undefined;
+    // /setup writes a validated token to disk. A stale PCLOUD_ACCESS_TOKEN in
+    // the host env must not override it — that is the usual 2094 failure.
+    return [saved, fromEnv].filter((value): value is PCloudCreds => Boolean(value?.access_token));
   };
 
-  const getClient = async (): Promise<PCloudClient> => {
-    const creds = await loadCreds();
-    if (!creds?.access_token) {
-      throw new Error("pCloud is not connected. Open /setup on this server and add an access token.");
-    }
-    if (cached && cached.creds.access_token === creds.access_token && cached.creds.hostname === creds.hostname) {
-      return cached.client;
-    }
-    const client = new PCloudClient(creds.access_token, creds.hostname || config.pcloudApiHost);
-    cached = { creds, client };
-    return client;
+  const getClient = async () => {
+    const candidates = await loadCreds();
+    const fingerprint = candidates.map((c) => `${c.hostname}:${c.access_token}`).join("|");
+    if (cached?.fingerprint === fingerprint) return cached.client;
+    const resolved = await resolveWorkingClient(candidates);
+    saveJson(pcloudCredsPath(config.dataDir), resolved.creds);
+    cached = { fingerprint, ...resolved };
+    return resolved.client;
   };
 
   const handleMcp = async (req: Request, res: Response) => {
@@ -163,7 +165,8 @@ export async function createHttpApp(config: AppConfig): Promise<express.Express>
   });
 
   app.get("/", async (_req, res) => {
-    const creds = await loadCreds();
+    const candidates = await loadCreds();
+    const creds = candidates[0];
     res.type("html").send(
       homePage({
         publicUrl: config.publicUrl,
