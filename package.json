@@ -1,0 +1,43 @@
+{
+  "name": "pcloud-mcp",
+  "version": "1.0.0",
+  "description": "Hostable MCP connector for pCloud storage. Works with Grok, Grokbot iOS, Claude, and other MCP clients.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pcloud-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "stdio": "node dist/index.js --stdio"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "pcloud",
+    "grok",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rghrb/pcloud-mcp.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.1",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.18.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}

@@ -1,0 +1,15 @@
+services:
+  pcloud-mcp:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - pcloud-mcp-data:/data
+    restart: unless-stopped
+
+volumes:
+  pcloud-mcp-data:

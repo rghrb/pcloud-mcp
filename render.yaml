@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: pcloud-mcp
+    runtime: docker
+    healthCheckPath: /health
+    envVars:
+      - key: PUBLIC_URL
+        sync: false
+      - key: CONNECTOR_PASSWORD
+        generateValue: true
+      - key: AUTH_MODE
+        value: oauth
+      - key: PCLOUD_API_HOST
+        value: eapi.pcloud.com
+      - key: PCLOUD_ACCESS_TOKEN
+        sync: false
+      - key: DATA_DIR
+        value: /data
