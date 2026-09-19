@@ -67,7 +67,7 @@ export interface AppConfig {
 export function loadConfig(): AppConfig {
   loadDotEnv();
 
-  const port = Number(process.env.PORT || 3000);
+  const port = Number(process.env.PORT || 3847);
   const dataDir = process.env.DATA_DIR || join(process.cwd(), "data");
   mkdirSync(dataDir, { recursive: true });
 

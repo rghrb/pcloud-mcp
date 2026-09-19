@@ -2,11 +2,12 @@ services:
   pcloud-mcp:
     build: .
     ports:
-      - "3000:3000"
+      - "3847:3847"
     env_file:
       - .env
     environment:
       DATA_DIR: /data
+      PORT: "3847"
     volumes:
       - pcloud-mcp-data:/data
     restart: unless-stopped

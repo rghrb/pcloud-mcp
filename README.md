@@ -36,7 +36,7 @@ npm run build
 npm start
 ```
 
-Open http://127.0.0.1:3000/setup, paste a pCloud access token, then point a local MCP client at `http://127.0.0.1:3000/mcp`.
+Open http://127.0.0.1:3847/setup, paste a pCloud access token, then point a local MCP client at `http://127.0.0.1:3847/mcp`.
 
 Grok and Grokbot iOS **cannot** use localhost. Deploy with HTTPS, then add `https://YOUR_HOST/mcp`.
 
@@ -64,7 +64,7 @@ pCloud access tokens do not expire until you revoke them.
 
 ## Host it
 
-The container listens on port `3000`. Persist `/data` so OAuth clients and the pCloud token survive restarts.
+The container listens on port `3847` (3000 is a common conflict). Persist `/data` so OAuth clients and the pCloud token survive restarts. Override with `PORT` if you need a different one.
 
 ### Docker Compose
 
@@ -90,7 +90,7 @@ docker compose up --build -d
 | `PCLOUD_CLIENT_ID` / `PCLOUD_CLIENT_SECRET` | for `/setup` OAuth | From pCloud My Apps |
 | `MCP_AUTH_TOKEN` | if `AUTH_MODE=bearer` | Static bearer token |
 | `DATA_DIR` | no | Default `./data` |
-| `PORT` | no | Default `3000` |
+| `PORT` | no | Default `3847` |
 
 If `CONNECTOR_PASSWORD` is unset, the server writes a random one to `data/connector-password.txt` on first start.
 
@@ -100,7 +100,7 @@ If `CONNECTOR_PASSWORD` is unset, the server writes a random one to `data/connec
 
 ```bash
 docker build -t pcloud-mcp .
-docker run --rm -p 3000:3000 \
+docker run --rm -p 3847:3847 \
   -e PUBLIC_URL=https://YOUR_HOST \
   -e CONNECTOR_PASSWORD='pick-a-long-password' \
   -e PCLOUD_ACCESS_TOKEN='...' \
