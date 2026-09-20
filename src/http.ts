@@ -42,7 +42,9 @@ function bearerEqual(provided: string, expected: string): boolean {
 
 export async function createHttpApp(config: AppConfig): Promise<express.Express> {
   const app = express();
-  app.set("trust proxy", true);
+  // Cloudflare + Traefik. A boolean `true` makes express-rate-limit throw
+  // ERR_ERL_PERMISSIVE_TRUST_PROXY and breaks Grokbot token refresh.
+  app.set("trust proxy", 2);
   app.use(cors);
   app.use(express.json({ limit: "12mb" }));
   app.use(express.urlencoded({ extended: true }));
@@ -108,7 +110,10 @@ export async function createHttpApp(config: AppConfig): Promise<express.Express>
         scopesSupported: ["mcp:tools"],
         resourceName: "pCloud MCP",
         serviceDocumentationUrl: new URL("https://github.com/rghrb/pcloud-mcp"),
-        clientRegistrationOptions: { clientSecretExpirySeconds: 0 }
+        clientRegistrationOptions: { clientSecretExpirySeconds: 0, rateLimit: false },
+        tokenOptions: { rateLimit: false },
+        authorizationOptions: { rateLimit: false },
+        revocationOptions: { rateLimit: false }
       })
     );
     app.get("/.well-known/oauth-protected-resource", (_req, res) => {

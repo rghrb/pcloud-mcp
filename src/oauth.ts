@@ -16,7 +16,7 @@ import type {
 import { consentPage } from "./pages.js";
 import { loadJson, oauthStorePath, saveJson } from "./store.js";
 
-const ACCESS_TTL_SEC = 60 * 60;
+const ACCESS_TTL_SEC = 7 * 24 * 60 * 60;
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const CODE_TTL_MS = 10 * 60 * 1000;
 
